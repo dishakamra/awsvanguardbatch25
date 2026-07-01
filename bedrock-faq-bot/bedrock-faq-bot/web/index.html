@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ Bot (Bedrock)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 0; background: #0b1220; color: #e8eef9; }
+    header { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; background: #0e172a; border-bottom:1px solid #1e293b; }
+    header h1 { font-size: 16px; margin:0; }
+    .api { display:flex; gap:8px; align-items:center; }
+    .api input { padding:8px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e8eef9; width:420px; }
+    .api button { padding:8px 12px; border:1px solid #334155; background:#111827; color:#e8eef9; border-radius:8px; cursor:pointer; }
+    main { max-width: 900px; margin: 0 auto; padding: 16px; }
+    .chat { background:#0e172a; border:1px solid #1f2937; border-radius:16px; padding:16px; min-height: 60vh; display:flex; flex-direction:column; gap:12px; }
+    .msg { padding:12px 14px; border-radius:12px; max-width: 80%; }
+    .user { background:#1f2a44; align-self:flex-end; }
+    .bot { background:#111827; border:1px solid #233145; }
+    .sources { font-size: 12px; color:#93a3b8; margin-top:8px; }
+    form { display:flex; gap:8px; margin-top: 12px; }
+    textarea { flex:1; padding:10px; border-radius:10px; background:#0b1220; color:#e8eef9; border:1px solid #334155; min-height: 60px; }
+    button.ask { padding:10px 16px; border-radius:10px; background:#2563eb; color:#fff; border:none; cursor:pointer; }
+    a { color:#93c5fd; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FAQ Bot (Amazon Bedrock)</h1>
+    <div class="api">
+      <span>API Base:</span>
+      <input id="apiBase" placeholder="https://xxxx.execute-api.<region>.amazonaws.com/prod">
+      <button id="saveBase">Save</button>
+    </div>
+  </header>
+  <main>
+    <div class="chat" id="chat"></div>
+    <form id="askForm">
+      <textarea id="question" placeholder="Ask a question about your FAQs..."></textarea>
+      <button class="ask" type="submit">Ask</button>
+    </form>
+    <p style="opacity:.7;margin-top:6px;">Tip: upload your FAQ JSON to S3 as <code>data/faq.json</code>. Then ask something it can answer.</p>
+  </main>
+<script>
+const chat = document.getElementById('chat');
+const q = document.getElementById('question');
+const apiBaseEl = document.getElementById('apiBase');
+const saveBtn = document.getElementById('saveBase');
+
+apiBaseEl.value = localStorage.getItem('apiBase') || '';
+saveBtn.onclick = () => {
+  localStorage.setItem('apiBase', apiBaseEl.value.trim());
+  alert('Saved!');
+};
+
+function addMsg(text, who='bot', sources=[]) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  div.innerText = text;
+  chat.appendChild(div);
+  if (who === 'bot' && sources?.length) {
+    const s = document.createElement('div');
+    s.className = 'sources';
+    s.innerHTML = '<b>Matched FAQs:</b><ol>' + sources.map(x => `<li><i>${escapeHtml(x.question)}</i></li>`).join('') + '</ol>';
+    chat.appendChild(s);
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+document.getElementById('askForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const apiBase = (apiBaseEl.value || '').trim();
+  if (!apiBase) { alert('Set API Base first'); return; }
+  const question = q.value.trim();
+  if (!question) return;
+  addMsg(question, 'user');
+  q.value='';
+  try {
+    const res = await fetch(apiBase + '/ask', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({question})
+    });
+    const js = await res.json();
+    if (!res.ok) throw new Error(js.error || 'Request failed');
+    addMsg(js.answer, 'bot', js.sources || []);
+  } catch (err) {
+    addMsg('Error: ' + err.message, 'bot');
+  }
+});
+</script>
+</body>
+</html>

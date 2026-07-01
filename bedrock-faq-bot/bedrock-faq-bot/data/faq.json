@@ -1,0 +1,22 @@
+[
+  {
+    "question": "What is your return policy?",
+    "answer": "You can return most items within 30 days of delivery for a full refund. Items must be unused and in original packaging."
+  },
+  {
+    "question": "How long does shipping take?",
+    "answer": "Standard shipping takes 3\u20135 business days. Expedited options are available at checkout."
+  },
+  {
+    "question": "Do you offer technical support?",
+    "answer": "Yes. Our IT help desk is available 24/7 via chat and email for Enterprise plans."
+  },
+  {
+    "question": "How do I reset my password?",
+    "answer": "Click 'Forgot password' on the sign-in page, or contact support to receive a reset link."
+  },
+  {
+    "question": "Can I cancel my subscription?",
+    "answer": "Yes. You can cancel anytime from the billing page. Your plan remains active until the end of the billing period."
+  }
+]
